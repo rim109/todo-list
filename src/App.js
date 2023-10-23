@@ -1,142 +1,124 @@
-// import logo from './logo.svg';
-// import './App.css';
-// import { useState } from "react";
-
-// function App() {
-//   //REACT WAY
-//   const [todos,setTodos] = useState({});
-
-//   //STATE 변화하는 값
-//   //REACT  -> STATE가 변할때마다 화면을 다시 그린다.
-//   //["할일1","할일2"]
-//   return (
-//     //jsx(js->HTML)
-//     <div className="App">
-//       <h1>TODO LIST</h1>
-//       <div>
-//         <input />
-//         <button>ADD</button>
-//       </div>
-//       {/*DRY DON'T REPEAT YOURSELF*/}
-
-//       {todos.map((todo,index) => (
-//         <div key={index}>
-//           <input type = "checkbox" />
-//           <span>{todo}</span>
-//           <button>DEL</button>
-//       </div>
-//       ))}
-//     </div>
-//   );
-// }
-
-// export default App;
-
-// import logo from "./logo.svg";
-// import "./App.css";
-// import { useState } from "react";
-
-// function App() {
-//   // react way
-//   const [inputValue, setInputValue] = useState("개구리");
-//   const [todos, setTodos] = useState(["할일 1", "할일 2"]);
-//   // state 변화하는 값
-//   // React -> state가 변할때마다 화면을 다시 그린다.
-//   // ["할일 1", "할일 2"];
-
-//   return (
-//     // JSX (JS -> HTML)
-//     <div className="App">
-//       <h1>TODO LIST</h1>
-//       <div>
-//         <input 
-//         //input의 제어권을 React(JS)가 가지고 있을 수 있도록, state 값을 주입했다.
-//         value={inputValue} 
-//         //input의 값이 변하는 이벤트가 발생했을 때, 제어권을 가진 React(JS)의 state값을 변경한다.
-//         onChange={(e) => {
-//           setInputValue(e.target.value);
-//         }}
-//       />
-//         <button onClick={() = {
-//           SetTodos ([...todos,inputValue]);
-//         }}>ADD</button>
-//       </div>
-//       {/* DRY Don't Repeat Yourself */}
-//       {todos.map((todo, index) => (
-//         <div key={index}>
-//           <input type="checkbox" />
-//           <span>{todo}</span>
-//           <button>DEL</button>
-//         </div>
-//       ))}
-//     </div>
-//   );
-// }
-
-// export default App;
-
 import { v4 as uuid } from "uuid";
 import "./App.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { RadioGroup } from "./components/RadioGroup";
+import { Select } from "./components/Select";
+import { TodoItem } from "./components/TodoItem";
+import { Button } from "./components/Button";
 
-// camelcase -> 띄어씌기가 필요한 곳에 대문자로 표시한다
-// ex) background-color -> backgroundColor
-//     font-size -> fontSize
 function App() {
-  // react way
+  // state 새로운 값으로 대체한다
   const [inputValue, setInputValue] = useState("");
   const [todos, setTodos] = useState([]);
-  const [doneTodos, setDoneTodos] = useState(
-    Array.from({ length: todos.length }, () => false)
-  );
-  // state 변화하는 값, 임시 값
-  // React -> state가 변할때마다 화면을 다시 그린다.
-  // ["할일 1", "할일 2"];
-return (
-    // JSX (JS -> HTML)
+  const [sort, setSort] = useState("NONE");
+  const [filter, setFilter] = useState("ALL");
+  const [updateTargetId, setUpdateTargetId] = useState("");
+
+  useEffect(() => {
+    const storedTodos = JSON.parse(localStorage.getItem("todos"));
+    if (!storedTodos || storedTodos.length === 0) return;
+    setTodos(storedTodos);
+  }, []);
+
+  /** computedValue */
+  const isUpdateMode = Boolean(updateTargetId);
+
+  const computedTodos = todos
+    .filter((todo) => {
+      if (filter === "ALL") return true;
+      if (filter === "DONE") return todo.isDone === true;
+      if (filter === "NOT_DONE") return todo.isDone === false;
+    })
+    .sort((a, b) => {
+      if (sort === "NONE") return 0;
+      if (sort === "CREATED_AT") return b.createdAt - a.createdAt;
+      if (sort === "CONTENT") return a.content.localeCompare(b.content);
+    });
+
+  const updateTodos = (nextTodos) => {
+    localStorage.setItem("todos", JSON.stringify(nextTodos));
+    setTodos(nextTodos);
+  };
+
+  return (
     <div className="App">
-      <h1>TODO LIST</h1>
-      <div>
-        {/* () => {} */}
+      <h1 className="header">TODO LIST</h1>
+      <div className="filter-container">
+        <div>
+          <span>필터 : </span>
+          <RadioGroup
+            values={["ALL", "DONE", "NOT_DONE"]}
+            labels={["전체", "완료", "미완료"]}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <span htmlFor="sort">정렬 : </span>
+          <Select
+            values={["NONE", "CREATED_AT", "CONTENT"]}
+            labels={["생성순", "최신순", "가나다순"]}
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          />
+        </div>
+      </div>
+      {/*
+      SPA(Single Page Application), CSR(client Side Rendering  <-> SSR, Server side rendering)
+      client가 dom그리기를 제어한다.
+      */}
+      <form
+        className="add-input-container"
+        onSubmit={(e) => {
+          // form은 기본적으로 새로고침을 trigger, why? 새로운 html파일을 내려받아야하니까
+          e.preventDefault();
+          if (!inputValue) return;
+          const newTodo = {
+            id: uuid(),
+            content: inputValue,
+            isDone: false,
+            createdAt: Date.now(),
+          };
+          updateTodos([...todos, newTodo]);
+          setInputValue("");
+        }}
+      >
         <input
+          className="add-input"
           // Input의 제어권을 React(JS)가 가지고 있을 수 있게, state값을 주입했다.
           value={inputValue}
           // Input의 값이 변하는 이벤트가 발생했을 때, 제어권을 가진 React(JS)의 state값을 변경한다.
           onChange={(e) => {
             setInputValue(e.target.value);
           }}
+          disabled={isUpdateMode}
         />
-        <button
-          onClick={() => {
-            // spread 연산자
-            setTodos([...todos, inputValue]);
-            setInputValue("");
-          }}
-        >
-          ADD
-        </button>
-      </div>
-      {/* DRY Don't Repeat Yourself */}
-      {/* [할일 1, 할일 2]  */}
-{todos.map((todo, index) => (
-        <div key={index}>
-          <input
-            type="checkbox"
-            value={doneTodos[index]}
-            onChange={(e) => {
-              const nextDoneTodos = doneTodos.map((isDone, idx) =>
-                idx === index ? e.target.checked : isDone
+        <Button disabled={!inputValue || isUpdateMode}>{"ADD"}</Button>
+      </form>
+
+      <div className="todo-list-container">
+        {computedTodos.map((todo) => (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            updateTargetId={updateTargetId}
+            setUpdateTargetId={setUpdateTargetId}
+            onTodoListDelete={(itemId) => {
+              const nextTodos = todos.filter((item) => item.id !== itemId);
+              updateTodos(nextTodos);
+            }}
+            onTodoListUpdate={(itemId, nextTodo) => {
+              const nextTodos = todos.map((todo) =>
+                todo.id === itemId ? { ...todo, ...nextTodo } : todo
               );
-              setDoneTodos(nextDoneTodos);
+              updateTodos(nextTodos);
             }}
           />
-          <span>{todo}</span>
-          <button>DEL</button>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
 export default App;
-

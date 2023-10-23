@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  padding: 0 60px;
 }
 
 .App-logo {
@@ -35,4 +36,41 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.header {
+  font-family: 'East Sea Dokdo', sans-serif;
+  font-size: 8rem;
+  color: purple;
+}
+
+.filter-container {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Sunflower', sans-serif;
+}
+
+.add-input-container {
+  width: full;
+  height: 20px;
+  padding: 0 60px;
+}
+
+.add-input {
+  margin-top: 20px;
+  width: 80%;
+  height: 100%;
+}
+
+.button {
+  background-color: wheat;
+  border-radius: 5px;
+}
+
+.todo-list-container {
+  height: full;
+  padding-top: 60px;
+  float: auto;
+  font-size: 3rem;
+  
 }
